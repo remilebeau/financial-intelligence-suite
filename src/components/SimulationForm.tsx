@@ -14,7 +14,6 @@ import {
 } from "recharts";
 import { AlertCircle, TrendingUp, ShieldAlert, Activity } from "lucide-react";
 
-// Types remain the same...
 interface SimulationInputs {
   productionQuantity: number;
   unitCost: number;
@@ -59,6 +58,7 @@ export default function SimulationForm() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Note: Update this URL to your production API path when deploying
       const response = await fetch("http://127.0.0.1:8000/api/simulations/production", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,7 +83,7 @@ export default function SimulationForm() {
 
   return (
     <div className="space-y-8">
-      {/* Input Section - Using your theme colors */}
+      {/* Input Section */}
       <form onSubmit={handleSubmit} className="bg-card text-card-foreground p-6 rounded-lg border border-border shadow-sm">
         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
           <Activity className="w-5 h-5 text-primary" />
@@ -116,7 +116,7 @@ export default function SimulationForm() {
         </button>
       </form>
 
-      {/* Results Section - Applied your custom fade-in-scale animation */}
+      {/* Results Section */}
       {results && (
         <div className="animate-fade-in-scale">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -169,8 +169,9 @@ export default function SimulationForm() {
                         borderRadius: 'var(--radius)' 
                     }}
                     itemStyle={{ color: 'var(--foreground)' }}
-                    formatter={(val: number) => [val, "Iterations"]}
-                    labelFormatter={(label) => `Profit Point: ${formatCurrency(label)}`}
+                    // Fix: Default parameters handle potential undefined values from Recharts
+                    formatter={(value: number = 0) => [value, "Iterations"]}
+                    labelFormatter={(label: number = 0) => `Profit Point: ${formatCurrency(label)}`}
                   />
                   <Bar dataKey="count">
                     {results.histogramData.map((entry, index) => (
