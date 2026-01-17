@@ -6,6 +6,11 @@ export default function Home() {
     <section className="flex flex-col gap-8">
       <h1 className="text-center text-3xl font-bold">Select a Model</h1>
       <Button asChild>
+        <Link href="/focus">
+          FOCUS 1.3 Schema Conversion for Cloud Billing Data
+        </Link>
+      </Button>
+      <Button asChild>
         <Link href="/optimization">Optimization</Link>
       </Button>
       <Button asChild>
