@@ -14,22 +14,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useMutation } from "@tanstack/react-query";
 
 export default function SimulationForm() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [results, setResults] = useState<SimulationResponse | null>(null);
-
-  // Initial state uses the global SimulationInputs type
   const [inputs, setInputs] = useState<SimulationInputs>({
-    productionQuantity: 100,
-    unitCost: 50,
-    unitPrice: 120,
-    salvagePrice: 20,
-    fixedCost: 1000,
-    worstLikelyDemand: 50,
-    expectedDemand: 100,
-    bestLikelyDemand: 150,
+    productionQuantity: 12000,
+    unitCost: 80,
+    unitPrice: 100,
+    salvagePrice: 30,
+    fixedCost: 100000,
+    worstLikelyDemand: 5000,
+    expectedDemand: 12000,
+    bestLikelyDemand: 16000,
+  });
+  const [result, setResult] = useState<SimulationResponse | null>(null);
+  const { mutate, isPending, isError, isSuccess, error } = useMutation({
+    mutationFn: (variables: SimulationInputs) => simulateProduction(variables),
+
+    onSuccess: (data) => {
+      setResult(data);
+    },
+
+    onMutate: () => {
+      setResult(null);
+    },
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,22 +45,9 @@ export default function SimulationForm() {
     setInputs((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    // Using the refactored lib function
-    const data = await simulateProduction(inputs);
-
-    if (data) {
-      setResults(data);
-    } else {
-      // Basic error feedback
-      console.error("Failed to fetch simulation results.");
-      setError("Failed to fetch simulation results. Please try again.");
-    }
-
-    setLoading(false);
+    mutate(inputs);
   };
 
   const formatCurrency = (val: number) =>
@@ -96,10 +91,10 @@ export default function SimulationForm() {
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={isPending}
               className="mt-8 w-full py-6 text-lg font-bold"
             >
-              {loading ? (
+              {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Calculating 5,000 Scenarios...
@@ -112,45 +107,45 @@ export default function SimulationForm() {
         </CardContent>
       </Card>
 
-      {error && (
+      {isError && (
         <div className="animate-fade-in-scale">
-          <p>{error}</p>
+          <p>{error.message}</p>
         </div>
       )}
 
-      {results && (
+      {isSuccess && result && (
         <div className="animate-fade-in-scale">
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
             <StatCard
               title="Expected Profit"
-              value={formatCurrency(results.summary.expectedProfit)}
+              value={formatCurrency(result.summary.expectedProfit)}
               icon={<TrendingUp className="h-4 w-4" />}
               chartVar="var(--chart-2)"
             />
             <StatCard
               title="Value at Risk (5%)"
-              value={formatCurrency(results.summary.valueAtRisk)}
+              value={formatCurrency(result.summary.valueAtRisk)}
               icon={<ShieldAlert className="h-4 w-4" />}
               chartVar="var(--destructive)"
             />
             <StatCard
               title="Best Case (95%)"
-              value={formatCurrency(results.summary.bestCase)}
+              value={formatCurrency(result.summary.bestCase)}
               icon={<TrendingUp className="h-4 w-4" />}
               chartVar="var(--chart-1)"
             />
             <StatCard
               title="Prob. of Loss"
-              value={`${(results.summary.probOfLoss * 100).toFixed(1)}%`}
+              value={`${(result.summary.probOfLoss * 100).toFixed(1)}%`}
               icon={<AlertCircle className="h-4 w-4" />}
               chartVar="var(--chart-5)"
             />
           </div>
 
           <SimulationCharts
-            data={results.histogramData}
-            expectedProfit={results.summary.expectedProfit}
-            valueAtRisk={results.summary.valueAtRisk}
+            data={result.histogramData}
+            expectedProfit={result.summary.expectedProfit}
+            valueAtRisk={result.summary.valueAtRisk}
           />
         </div>
       )}
